@@ -1,35 +1,52 @@
-import { useState, type FormEvent } from 'react';
+import { AxiosError } from 'axios';
+import { useActionState } from 'react';
+import z, { ZodError } from 'zod';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { useAuth } from '../hooks/useAuth';
+import { api } from '../services/api';
+
+const signInSchema = z.object({
+  email: z.email({ message: 'E-mail inválido' }),
+  password: z.string().trim().min(1, { message: 'Informe a senha' }),
+});
 
 export function SignIn() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [state, formAction, isLoading] = useActionState(signIn, null);
+  const auth = useAuth();
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    alert(email + ' ' + password);
+  async function signIn(_: any, formData: FormData) {
+    try {
+      const data = signInSchema.parse({
+        email: formData.get('email'),
+        password: formData.get('password'),
+      });
+
+      const response = await api.post('/sessions', data);
+
+      auth.save(response.data);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return { message: error.issues[0].message };
+      }
+
+      if (error instanceof AxiosError) {
+        return { message: error.response?.data.message };
+      }
+
+      return { message: 'Não foi possível entrar!' };
+    }
   }
 
   return (
-    <form onSubmit={onSubmit} className="w-full flex flex-col gap-4">
-      <Input
-        required
-        legend="E-mail"
-        type="email"
-        placeholder="seu@email.com"
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <Input
-        required
-        legend="Senha"
-        type="password"
-        placeholder="123456"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+    <form action={formAction} className="w-full flex flex-col gap-4">
+      <Input name="email" required legend="E-mail" type="email" placeholder="seu@email.com" />
+      <Input name="password" required legend="Senha" type="password" placeholder="123456" />
+      <p className="text-sm text-red-600 text-center my-4 font-medium">{state?.message}</p>
 
-      <Button type="submit">Entrar</Button>
+      <Button type="submit" isLoading={isLoading}>
+        Entrar
+      </Button>
 
       <a
         href="/signup"

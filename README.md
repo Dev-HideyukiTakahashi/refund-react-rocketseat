@@ -201,3 +201,121 @@ const containerClasses = clsx(
 ## 💡 Dica Extra
 
 - Com **Tailwind**, use junto com [tailwind-merge](https://github.com/dcastil/tailwind-merge) para evitar conflitos de classes.
+
+---
+
+Boa! 🚀 Seguindo o estilo do guia que você já montou, vou adicionar a sessão sobre **Axios** com instalação, exemplos básicos e dicas de uso.
+
+---
+
+Perfeito 😃 vou adicionar a sessão **Axios + React Hooks** ao guia, no mesmo estilo prático que você já montou:
+
+---
+
+# ⚛️ Axios + React Hooks
+
+Exemplo de como consumir **APIs** diretamente dentro de componentes React usando **`useEffect`** e **`useState`**.
+
+## Instalação
+
+```bash
+npm install axios
+# ou
+yarn add axios
+```
+
+---
+
+## 1. GET com `useEffect`
+
+```jsx
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+export default function Users() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const res = await axios.get('https://jsonplaceholder.typicode.com/users');
+        setUsers(res.data);
+      } catch (err) {
+        console.error('Erro ao carregar usuários:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUsers();
+  }, []);
+
+  if (loading) return <p>Carregando...</p>;
+
+  return (
+    <ul className="p-4">
+      {users.map((user) => (
+        <li key={user.id} className="border-b py-2">
+          {user.name} - {user.email}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+---
+
+## 2. POST com formulário
+
+```jsx
+import { useState } from 'react';
+import axios from 'axios';
+
+export default function CreateUser() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    try {
+      const res = await axios.post('https://jsonplaceholder.typicode.com/users', {
+        name,
+        email,
+      });
+      console.log('Usuário criado:', res.data);
+      alert('Usuário criado com sucesso!');
+    } catch (err) {
+      console.error('Erro ao criar usuário:', err);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="p-4 flex flex-col gap-2">
+      <input
+        type="text"
+        placeholder="Nome"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <input
+        type="email"
+        placeholder="E-mail"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <button
+        type="submit"
+        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+      >
+        Criar Usuário
+      </button>
+    </form>
+  );
+}
+```
+
+---

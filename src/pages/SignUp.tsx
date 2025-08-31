@@ -1,17 +1,64 @@
 import { useState, type FormEvent } from 'react';
+import z, { ZodError } from 'zod';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 
+import { AxiosError } from 'axios';
+import { useNavigate } from 'react-router';
+import { api } from '../services/api';
+
+const signUpSchema = z
+  .object({
+    name: z.string().trim().min(1, { message: 'Informe o nome' }),
+    email: z.email({ message: 'Informe um email válido' }),
+    password: z.string().min(6, { message: 'Senha deve ter pelo menos 6 dígitos' }),
+    passwordConfirm: z.string({ message: 'Confirme a senha' }),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: 'As senhas não são iguais',
+    path: ['passwordConfirm'],
+  });
+
 export function SignUp() {
+  const navigate = useNavigate();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    alert(email + ' ' + password + '' + name + '' + passwordConfirm);
+
+    try {
+      setIsLoading(true);
+
+      const data = signUpSchema.parse({
+        name,
+        email,
+        password,
+        passwordConfirm,
+      });
+
+      await api.post('/users', data);
+
+      if (confirm('Cadastrado com sucesso. Ir para tela de entrar?')) {
+        navigate('/');
+      }
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return alert(error.issues[0].message);
+      }
+
+      if (error instanceof AxiosError) {
+        return alert(error.response?.data.message);
+      }
+
+      alert('Não foi possível cadastrar');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
